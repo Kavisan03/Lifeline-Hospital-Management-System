@@ -18,6 +18,7 @@ if ($_SESSION['role'] !== 'Super Admin') {
     echo json_encode(['status' => 'error', 'message' => 'Forbidden: Only Super Admin can access admin management.']);
     exit;
 }
+
 $method = $_SERVER['REQUEST_METHOD'];
 
 try {
