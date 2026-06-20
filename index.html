@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lifeline | Hospital Management System</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Main Style Sheet -->
+    <link rel="stylesheet" href="styles.css?v=1.1">
+</head>
+<body>
+    <!-- Login Overlay Screen -->
+    <div id="login-overlay" class="login-overlay-screen">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="brand-logo">
+                    <i class="fa-solid fa-heart-pulse"></i>
+                </div>
+                <h2>Lifeline Portal</h2>
+                <p>Verify credentials to access administrative systems.</p>
+            </div>
+            <form id="form-login">
+                <div class="form-group">
+                    <label for="login_user">Username</label>
+                    <input type="text" id="login_user" name="username" required placeholder="e.g. admin">
+                </div>
+                <div class="form-group">
+                    <label for="login_pass">Password</label>
+                    <input type="password" id="login_pass" name="password" required placeholder="••••••••">
+                </div>
+                <div class="error-banner" id="login-error" style="display: none;"></div>
+                <button type="submit" class="btn-primary login-btn-wide">Authenticate</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- App Layout -->
+    <div class="app-layout" id="app-layout" style="display: none;">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-logo">
+                    <i class="fa-solid fa-heart-pulse"></i>
+                </div>
+                <h2>Lifeline</h2>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <button class="nav-btn active" data-tab="dashboard">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <span>Dashboard</span>
+                </button>
+                <button class="nav-btn" data-tab="patients">
+                    <i class="fa-solid fa-user-injured"></i>
+                    <span>Patients</span>
+                </button>
+                <button class="nav-btn" data-tab="doctors">
+                    <i class="fa-solid fa-user-md"></i>
+                    <span>Doctors</span>
+                </button>
+                <button class="nav-btn" data-tab="appointments">
+                    <i class="fa-solid fa-calendar-check"></i>
+                    <span>Appointments</span>
+                </button>
+                <button class="nav-btn" data-tab="admins" id="nav-btn-admins" style="display: none;">
+                    <i class="fa-solid fa-user-shield"></i>
+                    <span>Admins (RBAC)</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="avatar" id="profile-avatar">AD</div>
+                    <div class="profile-info">
+                        <h4 id="profile-username">Admin Desk</h4>
+                        <span id="profile-role">Primary Care Portal</span>
+                        <div class="shift-badge-container" style="margin-top: 0.15rem; display: flex; align-items: center; gap: 0.35rem;">
+                            <span id="profile-shift-indicator" class="shift-dot offline"></span>
+                            <span id="profile-shift-text" class="shift-text" style="font-size:0.7rem; color:var(--color-text-secondary);">Offline</span>
+                        </div>
+                    </div>
+                    <button class="logout-btn" id="btn-logout" title="Sign Out">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Header bar -->
+            <header class="content-header">
+                <div class="header-search">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="global-search" placeholder="Quick search patients or specialization...">
+                </div>
+                <div class="header-actions">
+                    <div class="date-badge">
+                        <i class="fa-regular fa-calendar"></i>
+                        <span id="current-date">June 19, 2026</span>
+                    </div>
+                    <button class="action-btn-primary" id="btn-quick-appointment">
+                        <i class="fa-solid fa-plus"></i> Book Appointment
+                    </button>
+                </div>
+            </header>
+
+            <!-- TAB: Dashboard -->
+            <section id="tab-dashboard" class="tab-pane active">
+                <div class="welcome-banner">
+                    <div class="welcome-text">
+                        <h1>Welcome Back, Administrator</h1>
+                        <p>Here is your hospital overview. Monitoring check-ins, scheduling, and staff availability.</p>
+                    </div>
+                    <div class="welcome-live-monitor">
+                        <div class="heart-rate-indicator">
+                            <span><i class="fa-solid fa-heartbeat heart-pulse-icon"></i> EKG Monitor</span>
+                            <span class="bpm-counter"><span id="live-bpm">72</span> BPM</span>
+                        </div>
+                        <canvas id="ecg-monitor-canvas" width="220" height="60"></canvas>
+                    </div>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="stats-grid">
+                    <!-- Total Patients -->
+                    <div class="stat-card card-patients">
+                        <div class="stat-icon-group">
+                            <i class="fa-solid fa-users"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Total Patients</span>
+                            <div class="stat-value-row">
+                                <h3 id="stat-patients">0</h3>
+                                <span class="stat-subtext text-cyan">(+3%)</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Active Doctors -->
+                    <div class="stat-card card-doctors">
+                        <div class="stat-icon-group">
+                            <i class="fa-solid fa-stethoscope"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Active Doctors</span>
+                            <div class="stat-value-row">
+                                <h3 id="stat-doctors">0</h3>
+                                <span class="stat-subtext text-emerald">(94% Availability)</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Total Appointments -->
+                    <div class="stat-card card-appointments">
+                        <div class="stat-icon-group">
+                            <i class="fa-solid fa-calendar-check"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Total Appointments</span>
+                            <div class="stat-value-row">
+                                <h3 id="stat-appointments">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Status Progress Card -->
+                    <div class="stat-card card-status">
+                        <div class="stat-icon-group">
+                            <i class="fa-solid fa-clock"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label" id="stat-progress-label">Status: 0 Pending / 0 Confirmed</span>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar-fill" id="stat-progress-bar" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dashboard Split Section -->
+                <div class="dashboard-split">
+                    <!-- Left: Upcoming Appointments -->
+                    <div class="split-left">
+                        <div class="section-title">
+                            <h3>Upcoming Schedules</h3>
+                            <button class="link-btn" onclick="switchTab('appointments')">View All</button>
+                        </div>
+                        <div class="upcoming-grid" id="dashboard-upcoming">
+                            <div class="empty-state">Loading schedules...</div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Quick Actions Panel -->
+                    <div class="split-right">
+                        <div class="section-title">
+                            <h3>Quick Operations</h3>
+                        </div>
+                        <div class="quick-actions">
+                            <button class="quick-op-btn" onclick="openModal('modal-patient')">
+                                <i class="fa-solid fa-user-plus"></i>
+                                <span>Register New Patient</span>
+                            </button>
+                            <button class="quick-op-btn" onclick="openModal('modal-doctor')">
+                                <i class="fa-solid fa-user-doctor"></i>
+                                <span>Register New Doctor</span>
+                            </button>
+                            <button class="quick-op-btn" onclick="openModal('modal-appointment')">
+                                <i class="fa-solid fa-calendar-plus"></i>
+                                <span>Book New Appointment</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB: Patients -->
+            <section id="tab-patients" class="tab-pane">
+                <div class="table-header">
+                    <h2>Patients Directory</h2>
+                    <button class="action-btn-primary" onclick="openModal('modal-patient')">
+                        <i class="fa-solid fa-plus"></i> Register Patient
+                    </button>
+                </div>
+                
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Avatar</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Date of Birth</th>
+                                <th>Gender</th>
+                            </tr>
+                        </thead>
+                        <tbody id="patients-table-body">
+                            <!-- Injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- TAB: Doctors -->
+            <section id="tab-doctors" class="tab-pane">
+                <div class="table-header">
+                    <h2>Doctor Roster</h2>
+                    <button class="action-btn-primary" onclick="openModal('modal-doctor')">
+                        <i class="fa-solid fa-plus"></i> Add Doctor
+                    </button>
+                </div>
+
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Avatar</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Specialization</th>
+                            </tr>
+                        </thead>
+                        <tbody id="doctors-table-body">
+                            <!-- Injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- TAB: Appointments -->
+            <section id="tab-appointments" class="tab-pane">
+                <div class="table-header">
+                    <h2>Appointment Schedules</h2>
+                    <button class="action-btn-primary" onclick="openModal('modal-appointment')">
+                        <i class="fa-solid fa-plus"></i> Book Appointment
+                    </button>
+                </div>
+
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Patient</th>
+                                <th>Doctor</th>
+                                <th>Specialization</th>
+                                <th>Date & Time</th>
+                                <th>Notes</th>
+                                <th>Status</th>
+                                <th class="text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="appointments-table-body">
+                            <!-- Injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- TAB: Admins -->
+            <section id="tab-admins" class="tab-pane">
+                <div class="table-header">
+                    <h2>System Administrators</h2>
+                    <button class="action-btn-primary" onclick="openModal('modal-admin')">
+                        <i class="fa-solid fa-user-shield"></i> Add Administrator
+                    </button>
+                </div>
+
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Username</th>
+                                <th>Role</th>
+                                <th>Shift Start</th>
+                                <th>Shift End</th>
+                                <th>Shift Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admins-table-body">
+                            <!-- Injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- MODAL: Register Patient -->
+    <div id="modal-patient" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Register Patient</h3>
+                <button class="close-modal-btn" onclick="closeModal('modal-patient')"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="form-patient">
+                <div class="modal-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="p_first_name">First Name</label>
+                            <input type="text" id="p_first_name" name="first_name" required placeholder="e.g. John">
+                        </div>
+                        <div class="form-group">
+                            <label for="p_last_name">Last Name</label>
+                            <input type="text" id="p_last_name" name="last_name" required placeholder="e.g. Doe">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="p_email">Email</label>
+                        <input type="email" id="p_email" name="email" required placeholder="e.g. john.doe@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="p_phone">Phone</label>
+                        <input type="tel" id="p_phone" name="phone" required placeholder="e.g. +1-555-0100">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="p_dob">Date of Birth</label>
+                            <input type="date" id="p_dob" name="date_of_birth" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="p_gender">Gender</label>
+                            <select id="p_gender" name="gender" required>
+                                <option value="" disabled selected>Select Gender</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="error-banner" id="p-error" style="display: none;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="closeModal('modal-patient')">Cancel</button>
+                    <button type="submit" class="btn-primary">Register Patient</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: Register Doctor -->
+    <div id="modal-doctor" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Register Doctor</h3>
+                <button class="close-modal-btn" onclick="closeModal('modal-doctor')"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="form-doctor">
+                <div class="modal-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="d_first_name">First Name</label>
+                            <input type="text" id="d_first_name" name="first_name" required placeholder="e.g. Sarah">
+                        </div>
+                        <div class="form-group">
+                            <label for="d_last_name">Last Name</label>
+                            <input type="text" id="d_last_name" name="last_name" required placeholder="e.g. Jenkins">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="d_email">Email</label>
+                        <input type="email" id="d_email" name="email" required placeholder="e.g. s.jenkins@hospital.com">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="d_phone">Phone</label>
+                            <input type="tel" id="d_phone" name="phone" required placeholder="e.g. +1-555-0199">
+                        </div>
+                        <div class="form-group">
+                            <label for="d_spec">Specialization</label>
+                            <input type="text" id="d_spec" name="specialization" required placeholder="e.g. Cardiology">
+                        </div>
+                    </div>
+                    <div class="error-banner" id="d-error" style="display: none;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="closeModal('modal-doctor')">Cancel</button>
+                    <button type="submit" class="btn-primary">Register Doctor</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: Book Appointment -->
+    <div id="modal-appointment" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Book Appointment</h3>
+                <button class="close-modal-btn" onclick="closeModal('modal-appointment')"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="form-appointment">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="app_patient">Select Patient</label>
+                        <select id="app_patient" name="patient_id" required>
+                            <option value="" disabled selected>Select Patient</option>
+                            <!-- Dynamically loaded -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="app_doctor">Select Doctor</label>
+                        <select id="app_doctor" name="doctor_id" required>
+                            <option value="" disabled selected>Select Doctor</option>
+                            <!-- Dynamically loaded -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="app_date">Appointment Date & Time</label>
+                        <input type="datetime-local" id="app_date" name="appointment_date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="app_notes">Notes (Symptoms / Comments)</label>
+                        <textarea id="app_notes" name="notes" placeholder="Specify visit reasons..."></textarea>
+                    </div>
+                    <div class="error-banner" id="app-error" style="display: none;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="closeModal('modal-appointment')">Cancel</button>
+                    <button type="submit" class="btn-primary">Confirm Booking</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: Register Admin -->
+    <div id="modal-admin" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Add System Administrator</h3>
+                <button class="close-modal-btn" onclick="closeModal('modal-admin')"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="form-admin">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="adm_user">Username</label>
+                        <input type="text" id="adm_user" name="username" required placeholder="e.g. desk_admin">
+                    </div>
+                    <div class="form-group">
+                        <label for="adm_pass">Password</label>
+                        <input type="password" id="adm_pass" name="password" required placeholder="••••••••">
+                    </div>
+                    <div class="form-group">
+                        <label for="adm_role">Assigned Role (RBAC)</label>
+                        <select id="adm_role" name="role" required>
+                            <option value="" disabled selected>Select Role</option>
+                            <option value="Super Admin">Super Admin</option>
+                            <option value="Doctor Admin">Doctor Admin</option>
+                            <option value="Desk Admin">Desk Admin</option>
+                            <option value="Support Admin">Support Admin</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="adm_shift_start">Shift Start Time</label>
+                            <input type="time" id="adm_shift_start" name="shift_start" required value="08:00">
+                        </div>
+                        <div class="form-group">
+                            <label for="adm_shift_end">Shift End Time</label>
+                            <input type="time" id="adm_shift_end" name="shift_end" required value="16:00">
+                        </div>
+                    </div>
+                    <div class="error-banner" id="adm-error" style="display: none;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="closeModal('modal-admin')">Cancel</button>
+                    <button type="submit" class="btn-primary">Register Admin</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Action Toast Notification -->
+    <div id="toast" class="toast">Status Updated!</div>
+
+    <!-- Main JavaScript Logic -->
+    <script src="app.js?v=1.2"></script>
+</body>
+</html>
